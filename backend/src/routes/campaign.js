@@ -21,6 +21,7 @@ router.get("/:id", getCampaignById);
 router.post("/", verifyTokenAndCreator, upload.single("image"), createCampaign);
 router.put("/:id", verifyTokenAndCreator, upload.single("image"), updateCampaign);
 router.get("/creator/my-campaigns", verifyTokenAndCreator, getCampaignsByCreator);
+router.get("/creator/analytics", verifyTokenAndCreator, getCreatorAnalytics);
 router.delete("/:id", verifyTokenAndCreator, deleteCampaign);
 router.put("/:id/approve", verifyTokenAndAdmin, approveCampaign);
 router.put("/:id/reject", verifyTokenAndAdmin, rejectCampaign);

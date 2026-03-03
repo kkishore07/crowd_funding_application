@@ -9,6 +9,8 @@ const ManageUsers = () => {
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
   const userName = user?.name || sessionStorage.getItem("userName");
+  const [query, setQuery] = useState("");
+  const [roleFilter, setRoleFilter] = useState("all");
 
   useEffect(() => {
     fetchUsers();
@@ -37,6 +39,23 @@ const ManageUsers = () => {
     }
   };
 
+  const totalUsers = users.length;
+  const adminCount = users.filter(u => u.role === "admin").length;
+  const creatorCount = users.filter(u => u.role === "creator").length;
+  const userCount = users.filter(u => u.role === "user").length;
+
+  const normalizedQuery = query.trim().toLowerCase();
+  const filteredUsers = users.filter(u => {
+    const matchesQuery =
+      !normalizedQuery ||
+      u.name?.toLowerCase().includes(normalizedQuery) ||
+      u.email?.toLowerCase().includes(normalizedQuery) ||
+      u._id?.toLowerCase().includes(normalizedQuery);
+
+    const matchesRole = roleFilter === "all" || u.role === roleFilter;
+    return matchesQuery && matchesRole;
+  });
+
   return (
     <div className="dashboard-container">
       <nav className="dashboard-nav">
@@ -52,15 +71,64 @@ const ManageUsers = () => {
         </div>
       </nav>
 
-      <main className="dashboard-main">
-        <div className="dashboard-header">
-          <h2 className="dashboard-title">Manage Users</h2>
+      <main className="dashboard-main manage-users-page">
+        <div className="manage-users-hero">
+          <div>
+            <h2 className="dashboard-title" style={{ marginBottom: "6px" }}>Manage Users</h2>
+            <p className="dashboard-subtitle">Search, filter, and review user accounts in one place.</p>
+          </div>
           <button onClick={() => navigate("/admin-dashboard")} className="btn btn-secondary">
             Back to Dashboard
           </button>
         </div>
 
-        <div className="dashboard-content">
+        <div className="users-stats">
+          <div className="users-stat-card">
+            <p className="users-stat-label">Total Users</p>
+            <h3 className="users-stat-value">{totalUsers}</h3>
+          </div>
+          <div className="users-stat-card">
+            <p className="users-stat-label">Admins</p>
+            <h3 className="users-stat-value">{adminCount}</h3>
+          </div>
+          <div className="users-stat-card">
+            <p className="users-stat-label">Creators</p>
+            <h3 className="users-stat-value">{creatorCount}</h3>
+          </div>
+          <div className="users-stat-card">
+            <p className="users-stat-label">Donors</p>
+            <h3 className="users-stat-value">{userCount}</h3>
+          </div>
+        </div>
+
+        <div className="users-panel">
+          <div className="users-toolbar">
+            <div className="users-search">
+              <input
+                className="input"
+                type="text"
+                placeholder="Search by name, email, or id"
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+              />
+            </div>
+            <div className="users-filter">
+              <select
+                className="input"
+                value={roleFilter}
+                onChange={(e) => setRoleFilter(e.target.value)}
+              >
+                <option value="all">All roles</option>
+                <option value="admin">Admin</option>
+                <option value="creator">Creator</option>
+                <option value="user">Donor</option>
+              </select>
+            </div>
+            <div className="users-count">
+              Showing {filteredUsers.length} of {totalUsers}
+            </div>
+          </div>
+
           {loading ? (
             <p>Loading users...</p>
           ) : (
@@ -68,32 +136,46 @@ const ManageUsers = () => {
               <table>
                 <thead>
                   <tr>
-                    <th>ID</th>
-                    <th>Name</th>
-                    <th>Email</th>
+                    <th>User</th>
                     <th>Role</th>
                     <th>Status</th>
+                    <th>ID</th>
                     <th>Actions</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {users.length > 0 ? (
-                    users.map((u) => (
+                  {filteredUsers.length > 0 ? (
+                    filteredUsers.map((u) => (
                       <tr key={u._id}>
-                        <td>{u._id}</td>
-                        <td>{u.name}</td>
-                        <td>{u.email}</td>
-                        <td>{u.role}</td>
-                        <td>Active</td>
                         <td>
-                          <button className="btn btn-small btn-secondary">Edit</button>
-                          <button className="btn btn-small btn-danger">Delete</button>
+                          <div className="users-name">
+                            <div className="users-avatar">{u.name?.charAt(0)?.toUpperCase() || "U"}</div>
+                            <div>
+                              <div className="users-name-text">{u.name}</div>
+                              <div className="users-email">{u.email}</div>
+                            </div>
+                          </div>
+                        </td>
+                        <td>
+                          <span className={`users-role users-role-${u.role}`}>{u.role}</span>
+                        </td>
+                        <td>
+                          <span className="users-status">Active</span>
+                        </td>
+                        <td>
+                          <span className="users-id">{u._id}</span>
+                        </td>
+                        <td>
+                          <div className="users-actions">
+                            <button className="btn btn-small btn-ghost">Edit</button>
+                            <button className="btn btn-small btn-danger">Delete</button>
+                          </div>
                         </td>
                       </tr>
                     ))
                   ) : (
                     <tr>
-                      <td colSpan="6">No users found</td>
+                      <td colSpan="5">No users found</td>
                     </tr>
                   )}
                 </tbody>

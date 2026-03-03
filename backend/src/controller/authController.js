@@ -49,4 +49,13 @@ const login = async (req, res) => {
   }
 };
 
-module.exports = { register, login };
+const getUsers = async (req, res) => {
+  try {
+    const users = await User.find({}).select("-password").sort({ createdAt: -1 });
+    res.status(200).json({ users });
+  } catch (err) {
+    res.status(500).json({ message: "Failed to fetch users", error: err.message });
+  }
+};
+
+module.exports = { register, login, getUsers };

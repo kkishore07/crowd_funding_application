@@ -18,7 +18,12 @@ const UserDashboard = () => {
         const data = await response.json();
         if (response.ok) {
           const campaigns = Array.isArray(data.campaigns) ? data.campaigns : [];
-          setTopCampaigns(campaigns.slice(0, 3));
+          const now = new Date();
+          const activeCampaigns = campaigns.filter((campaign) => {
+            const endDate = campaign.endDate ? new Date(campaign.endDate) : null;
+            return !campaign.isExpired && (!endDate || endDate > now);
+          });
+          setTopCampaigns(activeCampaigns.slice(0, 3));
         } else {
           setCampaignError(data.message || "Failed to load campaigns");
         }
@@ -33,119 +38,137 @@ const UserDashboard = () => {
   }, []);
 
   return (
-    <div className="dashboard-container">
+    <div className="dashboard-container donor-dashboard">
       <nav className="dashboard-nav">
         <div className="dashboard-nav-content">
           <div className="dashboard-nav-top">
             <h1 className="dashboard-logo">CrowdFunding</h1>
             <div className="dashboard-user-info">
-              <span className="dashboard-user-name">Welcome, <strong>{userName}</strong></span>
+              <span className="dashboard-user-name">
+                Welcome, <strong>{userName}</strong>
+              </span>
               <span className="dashboard-badge dashboard-badge-user">Donor</span>
-              <button onClick={handleLogout} className="btn btn-danger">Logout</button>
+              <button onClick={handleLogout} className="btn btn-danger">
+                Logout
+              </button>
             </div>
           </div>
         </div>
       </nav>
 
-      <main className="dashboard-main">
-        <div style={{ marginBottom: "32px" }}>
-          <div className="dashboard-header" style={{ padding: 0 }}>
-            <h2 className="dashboard-title">Top Campaigns</h2>
+      <main className="dashboard-main donor-dashboard-main">
+        <section className="donor-hero">
+          <div>
+            <p className="donor-hero-tag">Donor Dashboard</p>
+            <h2 className="donor-hero-title">Welcome back, {userName || "Donor"}.</h2>
+            <p className="donor-hero-subtitle">
+              Pick a cause that speaks to you and make an impact today.
+            </p>
+            <div className="donor-hero-actions">
+              <button className="btn btn-primary" onClick={() => navigate("/campaigns")}>
+                Explore Campaigns
+              </button>
+              <button className="btn btn-secondary" onClick={() => navigate("/my-donations")}>
+                View My Donations
+              </button>
+            </div>
+          </div>
+          <div className="donor-hero-card">
+            <div className="donor-hero-card-icon">✨</div>
+            <div>
+              <p className="donor-hero-card-title">Make every rupee count</p>
+              <p className="donor-hero-card-text">
+                Discover verified campaigns and track your contributions in real time.
+              </p>
+            </div>
+          </div>
+        </section>
+
+        <section className="donor-quick-actions">
+          <button
+            className="donor-action-card"
+            onClick={() => navigate("/campaigns")}
+            type="button"
+          >
+            <span className="donor-action-icon">🔍</span>
+            <span>
+              <strong>Browse Campaigns</strong>
+              <small>Discover new causes</small>
+            </span>
+          </button>
+          <button
+            className="donor-action-card"
+            onClick={() => navigate("/my-donations")}
+            type="button"
+          >
+            <span className="donor-action-icon">💳</span>
+            <span>
+              <strong>My Donations</strong>
+              <small>Track your impact</small>
+            </span>
+          </button>
+          <button className="donor-action-card" type="button">
+            <span className="donor-action-icon">👤</span>
+            <span>
+              <strong>Profile Settings</strong>
+              <small>Update your details</small>
+            </span>
+          </button>
+        </section>
+
+        <section className="donor-top-campaigns">
+          <div className="donor-section-header">
+            <div>
+              <h3>Top Campaigns</h3>
+              <p>Fresh campaigns needing your support.</p>
+            </div>
+            <button className="btn btn-secondary" onClick={() => navigate("/campaigns")}>
+              View All
+            </button>
           </div>
 
           {campaignLoading && <p>Loading campaigns...</p>}
           {campaignError && <p className="alert alert-error">{campaignError}</p>}
 
           {!campaignLoading && !campaignError && topCampaigns.length === 0 && (
-            <p style={{ color: "#666" }}>No campaigns available.</p>
+            <p className="donor-empty">No campaigns available.</p>
           )}
 
           {!campaignLoading && !campaignError && topCampaigns.length > 0 && (
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: "12px" }}>
-              {topCampaigns.map((campaign) => (
-                <div key={campaign._id} className="campaign-card" style={{ padding: 0, height: "fit-content" }}>
-                  {campaign.image ? (
-                    <img
-                      src={`${API_URL}/uploads/${campaign.image}`}
-                      alt={campaign.title}
-                      style={{
-                        width: "100%",
-                        height: "120px",
-                        objectFit: "cover",
-                        borderRadius: "12px 12px 0 0"
-                      }}
-                    />
-                  ) : (
-                    <div style={{ 
-                      width: "100%", 
-                      height: "120px", 
-                      backgroundColor: "#f0f0f0", 
-                      display: "flex", 
-                      alignItems: "center", 
-                      justifyContent: "center",
-                      fontSize: "32px",
-                      borderRadius: "12px 12px 0 0"
-                    }}>🎯</div>
-                  )}
-                  <div style={{ padding: "10px" }}>
-                    <h3 style={{ marginBottom: "6px", fontSize: "14px", fontWeight: "600" }}>{campaign.title.substring(0, 30)}</h3>
-                    <p style={{ color: "#666", marginBottom: "8px", fontSize: "12px" }}>
-                      {campaign.description?.substring(0, 60)}...
-                    </p>
-                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", fontSize: "11px" }}>
-                      <span style={{ color: "#666" }}>
-                        ₹{campaign.currentAmount}
-                      </span>
-                      <button
-                        className="btn btn-primary"
-                        onClick={() => navigate(`/campaign/${campaign._id}/donate`)}
-                        style={{ padding: "4px 10px", fontSize: "11px" }}
-                      >
-                        Donate
-                      </button>
+            <div className="donor-campaign-grid">
+              {topCampaigns.map((campaign) => {
+                const isTargetReached = campaign.currentAmount >= campaign.targetAmount;
+                return (
+                  <div key={campaign._id} className="donor-campaign-card">
+                    {campaign.image ? (
+                      <img
+                        src={`${API_URL}/uploads/${campaign.image}`}
+                        alt={campaign.title}
+                        className="donor-campaign-image"
+                      />
+                    ) : (
+                      <div className="donor-campaign-placeholder">🎯</div>
+                    )}
+                    <div className="donor-campaign-body">
+                      <h4>{campaign.title.substring(0, 34)}</h4>
+                      <p>{campaign.description?.substring(0, 70)}...</p>
+                      <div className="donor-campaign-meta">
+                        <span>₹{campaign.currentAmount.toLocaleString("en-IN")}</span>
+                        <button
+                          className="btn btn-primary"
+                          onClick={() => navigate(`/campaign/${campaign._id}/donate`)}
+                          disabled={isTargetReached}
+                        >
+                          {isTargetReached ? "Target Reached" : "Donate"}
+                        </button>
+                      </div>
                     </div>
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           )}
-        </div>
-
-        <div className="dashboard-header">
-          <h2 className="dashboard-title">Donor Dashboard</h2>
-        </div>
-        
-        <div className="dashboard-grid">
-          <div className="dashboard-card" onClick={() => navigate("/campaigns")}>
-            <div className="dashboard-card-icon dashboard-card-icon-primary">🔍</div>
-            <div className="dashboard-card-content">
-              <h3 className="dashboard-card-title">Browse Campaigns</h3>
-              <p className="dashboard-card-description">Discover amazing projects to support</p>
-            </div>
-            <button className="dashboard-card-button">Explore</button>
-          </div>
-
-          <div className="dashboard-card" onClick={() => navigate("/my-donations")}>
-            <div className="dashboard-card-icon dashboard-card-icon-success">💳</div>
-            <div className="dashboard-card-content">
-              <h3 className="dashboard-card-title">My Donations</h3>
-              <p className="dashboard-card-description">Track your contributions</p>
-            </div>
-            <button className="dashboard-card-button">View</button>
-          </div>
-
-          <div className="dashboard-card">
-            <div className="dashboard-card-icon dashboard-card-icon-purple">👤</div>
-            <div className="dashboard-card-content">
-              <h3 className="dashboard-card-title">My Profile</h3>
-              <p className="dashboard-card-description">Update your personal information and account preferences.</p>
-            </div>
-            <button className="dashboard-card-button">
-              Edit Profile
-            </button>
-          </div>
-        </div>
-
+        </section>
       </main>
     </div>
   );

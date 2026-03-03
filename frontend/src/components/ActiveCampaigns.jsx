@@ -37,7 +37,9 @@ const ActiveCampaigns = () => {
 
       const data = await response.json();
       if (response.ok) {
-        setCampaigns(data.campaigns || []);
+        const allCampaigns = data.campaigns || [];
+        const activeCampaigns = allCampaigns.filter(campaign => campaign.currentAmount < campaign.targetAmount);
+        setCampaigns(activeCampaigns);
       } else {
         setError(data.message || "Failed to fetch campaigns");
       }

@@ -26,6 +26,8 @@ const Donate = () => {
         // Check if campaign has expired
         if (d.campaign.isExpired) {
           setError("This campaign has expired and is no longer accepting donations");
+        } else if (d.campaign.currentAmount >= d.campaign.targetAmount) {
+          setError("This campaign has reached its target and is no longer accepting donations");
         }
       })
       .catch(() => { setError("Campaign not found"); setLoading(false); });
@@ -93,6 +95,7 @@ const Donate = () => {
 
   const progress = Math.min((campaign.currentAmount / campaign.targetAmount) * 100, 100);
   const daysLeft = Math.max(0, Math.ceil((new Date(campaign.endDate) - new Date()) / (1000 * 60 * 60 * 24)));
+  const isTargetReached = campaign.currentAmount >= campaign.targetAmount;
 
   return (
     <div className="dashboard-container">
@@ -134,6 +137,18 @@ const Donate = () => {
                 ⚠️ This campaign has expired
               </div>
             )}
+            {isTargetReached && (
+              <div style={{
+                marginTop: "12px",
+                padding: "12px",
+                backgroundColor: "#10b981",
+                color: "white",
+                borderRadius: "4px",
+                fontWeight: "500"
+              }}>
+                ✅ Target amount reached
+              </div>
+            )}
           </div>
 
           <div className="donation-progress">
@@ -169,13 +184,16 @@ const Donate = () => {
               <input
                 type="number"
                 value={amount}
-                onChange={(e) => { setAmount(e.target.value); setError(""); }}
+                onChange={(e) => { 
+                  setAmount(e.target.value); 
+                  if (!campaign.isExpired && !isTargetReached) setError(""); 
+                }}
                 className="input"
                 placeholder="Enter amount"
                 min="1"
                 step="0.01"
                 required
-                disabled={campaign.isExpired}
+                disabled={campaign.isExpired || isTargetReached}
               />
             </div>
 
@@ -186,7 +204,7 @@ const Donate = () => {
                 onChange={(e) => setPaymentMethod(e.target.value)}
                 className="input"
                 required
-                disabled={campaign.isExpired}
+                disabled={campaign.isExpired || isTargetReached}
               >
                 <option value="upi">UPI</option>
                 <option value="credit_card">Credit Card</option>
@@ -198,7 +216,7 @@ const Donate = () => {
 
             <button 
               type="submit" 
-              disabled={loading || campaign.isExpired} 
+              disabled={loading || campaign.isExpired || isTargetReached} 
               className="btn btn-primary btn-lg"
             >
               {loading ? "Processing..." : "Donate Now"}

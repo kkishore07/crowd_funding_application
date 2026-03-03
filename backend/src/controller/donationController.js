@@ -45,6 +45,16 @@ const createDonation = async (req, res) => {
     if (!campaign) return res.status(404).json({ message: "Campaign not found" });
     if (campaign.status !== "approved") return res.status(400).json({ message: "Campaign not active" });
 
+    if (campaign.currentAmount >= campaign.targetAmount) {
+      return res.status(400).json({ message: "Campaign target already reached" });
+    }
+
+    if (campaign.currentAmount + amount > campaign.targetAmount) {
+      return res.status(400).json({
+        message: `Donation exceeds remaining target amount of ₹${campaign.targetAmount - campaign.currentAmount}`
+      });
+    }
+
     // Check campaign deadline
     campaign.checkExpired();
     if (campaign.isExpired) {

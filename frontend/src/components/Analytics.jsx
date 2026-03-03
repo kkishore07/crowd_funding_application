@@ -49,6 +49,12 @@ const Analytics = () => {
   if (loading) return <div className="dashboard-container"><p>Loading...</p></div>;
   if (error) return <div className="dashboard-container"><div className="alert alert-error">{error}</div></div>;
 
+  const safeTotalTarget = analytics.totalTarget || 0;
+  const safeTotalRaised = analytics.totalRaised || 0;
+  const totalProgress = safeTotalTarget > 0 ? Math.min((safeTotalRaised / safeTotalTarget) * 100, 100) : 0;
+  const topCampaigns = Array.isArray(analytics.topCampaigns) ? analytics.topCampaigns : [];
+  const maxTopTarget = Math.max(...topCampaigns.map(c => c.targetAmount || 0), 1);
+
   return (
     <div className="dashboard-container">
       <main className="dashboard-main">
@@ -127,11 +133,54 @@ const Analytics = () => {
           </div>
         </div>
 
+        <div className="dashboard-grid" style={{ marginBottom: "24px" }}>
+          <div className="dashboard-card" style={{ gridColumn: "1 / -1" }}>
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "10px" }}>
+              <h3 className="dashboard-card-title" style={{ margin: 0 }}>Overall Progress</h3>
+              <span style={{ fontSize: "12px", color: "#666" }}>
+                ₹{safeTotalRaised.toLocaleString('en-IN')} / ₹{safeTotalTarget.toLocaleString('en-IN')}
+              </span>
+            </div>
+            <div style={{ height: "10px", background: "#e5e7eb", borderRadius: "6px", overflow: "hidden" }}>
+              <div style={{ height: "100%", width: `${totalProgress}%`, background: "var(--primary)", transition: "width 0.3s ease" }} />
+            </div>
+            <div style={{ marginTop: "8px", fontSize: "12px", color: "#666" }}>{totalProgress.toFixed(1)}% of total target raised</div>
+          </div>
+        </div>
+
+        <div className="dashboard-grid" style={{ marginBottom: "24px" }}>
+          <div className="dashboard-card" style={{ gridColumn: "1 / -1" }}>
+            <h3 className="dashboard-card-title" style={{ marginBottom: "12px" }}>Campaign Status Breakdown</h3>
+            <div style={{ display: "grid", gap: "10px" }}>
+              {[
+                { label: "Approved", value: analytics.approvedCampaigns, color: "#10b981" },
+                { label: "Pending", value: analytics.pendingCampaigns, color: "#f59e0b" },
+                { label: "Rejected", value: analytics.rejectedCampaigns, color: "#ef4444" },
+              ].map((item) => {
+                const total = analytics.totalCampaigns || 1;
+                const percent = Math.min((item.value / total) * 100, 100);
+                return (
+                  <div key={item.label} style={{ display: "grid", gridTemplateColumns: "120px 1fr 48px", gap: "10px", alignItems: "center" }}>
+                    <span style={{ fontSize: "12px", color: "#666" }}>{item.label}</span>
+                    <div style={{ height: "8px", background: "#f3f4f6", borderRadius: "6px", overflow: "hidden" }}>
+                      <div style={{ height: "100%", width: `${percent}%`, background: item.color }} />
+                    </div>
+                    <span style={{ fontSize: "12px", color: "#666", textAlign: "right" }}>{item.value}</span>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+
         {analytics.topCampaigns && analytics.topCampaigns.length > 0 && (
           <div>
             <h3 style={{ marginBottom: "16px" }}>Top Performing Campaigns</h3>
             <div style={{ display: "grid", gap: "16px" }}>
-              {analytics.topCampaigns.map((campaign) => (
+              {analytics.topCampaigns.map((campaign) => {
+                const progress = campaign.targetAmount > 0 ? Math.min((campaign.currentAmount / campaign.targetAmount) * 100, 100) : 0;
+                const barWidth = Math.max(((campaign.targetAmount || 0) / maxTopTarget) * 100, 5);
+                return (
                 <div key={campaign._id} className="campaign-card" style={{ padding: "16px" }}>
                   <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                     <div style={{ flex: 1 }}>
@@ -141,6 +190,12 @@ const Analytics = () => {
                         <span>Raised: ₹{campaign.currentAmount.toLocaleString('en-IN')}</span>
                         <span>Donations: {campaign.donationCount}</span>
                       </div>
+                      <div style={{ marginTop: "10px" }}>
+                        <div style={{ height: "8px", background: "#f3f4f6", borderRadius: "6px", overflow: "hidden" }}>
+                          <div style={{ height: "100%", width: `${progress}%`, background: "var(--primary)" }} />
+                        </div>
+                        <div style={{ marginTop: "6px", fontSize: "12px", color: "#666" }}>{progress.toFixed(1)}% funded</div>
+                      </div>
                     </div>
                     <div style={{ textAlign: "right" }}>
                       <div style={{ fontSize: "24px", fontWeight: "bold", color: "var(--primary)" }}>
@@ -149,8 +204,15 @@ const Analytics = () => {
                       <div style={{ fontSize: "12px", color: "#666" }}>Progress</div>
                     </div>
                   </div>
+                  <div style={{ marginTop: "12px" }}>
+                    <div style={{ fontSize: "12px", color: "#666", marginBottom: "6px" }}>Relative Target Size</div>
+                    <div style={{ height: "6px", background: "#eef2ff", borderRadius: "6px", overflow: "hidden" }}>
+                      <div style={{ height: "100%", width: `${barWidth}%`, background: "#6366f1" }} />
+                    </div>
+                  </div>
                 </div>
-              ))}
+                );
+              })}
             </div>
           </div>
         )}
