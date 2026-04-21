@@ -15,7 +15,7 @@ const Donate = () => {
   const [campaign, setCampaign] = useState<Campaign | null>(null);
   const [loading, setLoading] = useState(true);
   const [amount, setAmount] = useState("");
-  const [paymentMethod, setPaymentMethod] = useState("credit_card");
+  const [paymentMethod, setPaymentMethod] = useState("upi");
   const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
@@ -125,9 +125,21 @@ const Donate = () => {
             </div>
             <div>
               <Label>Payment Method</Label>
-              <div className="grid grid-cols-3 gap-2 mt-1.5">
-                {[{ value: "credit_card", label: "Card" }, { value: "paypal", label: "PayPal" }, { value: "bank_transfer", label: "Bank" }].map((m) => (
-                  <Button key={m.value} type="button" variant={paymentMethod === m.value ? "default" : "outline"} size="sm" onClick={() => setPaymentMethod(m.value)}>
+              <div className="grid grid-cols-2 gap-2 mt-1.5 sm:grid-cols-3">
+                {[
+                  { value: "upi", label: "UPI" },
+                  { value: "credit_card", label: "Credit Card" },
+                  { value: "debit_card", label: "Debit Card" },
+                  { value: "net_banking", label: "Net Banking" },
+                  { value: "wallet", label: "Wallet" },
+                ].map((m) => (
+                  <Button
+                    key={m.value}
+                    type="button"
+                    variant={paymentMethod === m.value ? "default" : "outline"}
+                    size="sm"
+                    onClick={() => setPaymentMethod(m.value)}
+                  >
                     {m.label}
                   </Button>
                 ))}
