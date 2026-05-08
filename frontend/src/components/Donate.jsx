@@ -11,6 +11,7 @@ const Donate = () => {
   const [campaign, setCampaign] = useState(null);
   const [amount, setAmount] = useState("");
   const [paymentMethod, setPaymentMethod] = useState("upi");
+  const [phoneNumber, setPhoneNumber] = useState("");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
@@ -56,7 +57,8 @@ const Donate = () => {
         body: JSON.stringify({ 
           campaignId, 
           amount: parseFloat(amount),
-          paymentMethod 
+          paymentMethod,
+          phoneNumber: phoneNumber || null,
         }),
       });
 
@@ -212,6 +214,18 @@ const Donate = () => {
                 <option value="net_banking">Net Banking</option>
                 <option value="wallet">Wallet</option>
               </select>
+            </div>
+
+            <div className="form-group">
+              <label className="form-label">Phone Number (optional)</label>
+              <input
+                type="tel"
+                value={phoneNumber}
+                onChange={(e) => setPhoneNumber(e.target.value)}
+                className="input"
+                placeholder="e.g. +919876543210"
+                disabled={campaign.isExpired || isTargetReached}
+              />
             </div>
 
             <button 

@@ -9,6 +9,7 @@ const authRoutes = require("./src/routes/auth");
 const campaignRoutes = require("./src/routes/campaign");
 const donationRoutes = require("./src/routes/donation");
 const { verifyToken } = require("./src/middleware/authMiddleware");
+const { sendSMS } = require("./src/utils/smsService");
 
 const app = express();
 
@@ -62,6 +63,19 @@ app.get("/api/health", (req, res) => {
 
 app.get("/api/test-protected", verifyToken, (req, res) => {
   res.json({ message: "Protected route accessed", user: req.user });
+});
+
+// Test SMS endpoint (dev only)
+app.post("/api/test/sms", async (req, res) => {
+  try {
+    const { phoneNumber, message } = req.body;
+    if (!phoneNumber || !message) return res.status(400).json({ message: "phoneNumber and message required" });
+    const result = await sendSMS(phoneNumber, message);
+    res.json({ success: true, result });
+  } catch (err) {
+    console.error("/api/test/sms error:", err);
+    res.status(500).json({ success: false, error: err.message });
+  }
 });
 
 // Start server

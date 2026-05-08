@@ -1,5 +1,6 @@
 const Donation = require("../models/donation");
 const Campaign = require("../models/campaign");
+const { sendSMS } = require("../utils/smsService");
 
 // Fraud detection helper
 const detectFraudulentActivity = async (donor, campaignId, amount) => {
@@ -36,9 +37,14 @@ const detectFraudulentActivity = async (donor, campaignId, amount) => {
 
 const createDonation = async (req, res) => {
   try {
-    const { campaignId, amount, paymentMethod } = req.body;
+    const { campaignId, amount, paymentMethod, phoneNumber } = req.body;
     if (!campaignId || !amount || amount <= 0) {
       return res.status(400).json({ message: "Campaign and amount required" });
+    }
+
+    // Basic phone number validation (optional)
+    if (phoneNumber && !/^\+?\d{7,15}$/.test(phoneNumber)) {
+      return res.status(400).json({ message: "Invalid phone number format" });
     }
 
     const campaign = await Campaign.findById(campaignId);
@@ -66,7 +72,21 @@ const createDonation = async (req, res) => {
     const fraudCheck = await detectFraudulentActivity(req.user.id, campaignId, amount);
 
     // Generate mock transaction ID
-    const transactionId = `TXN${Date.now()}${Math.random().toString(36).substr(2, 9).toUpperCase()}`;
+    let transactionId = `TXN${Date.now()}${Math.random().toString(36).substr(2, 9).toUpperCase()}`;
+
+    // If phoneNumber provided, mark transaction with phone suffix and log mock billing
+    if (phoneNumber) {
+      const digits = phoneNumber.replace(/\D/g, "");
+      transactionId = `${transactionId}-PH${digits.slice(-4)}`;
+      console.log(`Mock billing to phone ${phoneNumber} for amount ${amount} (txn ${transactionId})`);
+      // Send mock SMS notification about the donation
+      try {
+        await sendSMS(phoneNumber, `Thank you for donating ₹${amount} to the campaign. Transaction: ${transactionId}`);
+      } catch (smsErr) {
+        console.error("Failed to send mock SMS:", smsErr);
+      }
+      // NOTE: Integrate real payment gateway or SMS-billing provider here in production.
+    }
 
     const donation = await Donation.create({
       donor: req.user.id,
@@ -74,6 +94,7 @@ const createDonation = async (req, res) => {
       campaign: campaignId,
       amount,
       paymentMethod: paymentMethod || "upi",
+      phoneNumber: phoneNumber || null,
       paymentStatus: "completed",
       transactionId,
       isSuspicious: fraudCheck.isSuspicious,

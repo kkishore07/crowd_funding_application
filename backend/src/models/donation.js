@@ -15,6 +15,7 @@ const donationSchema = new mongoose.Schema({
     enum: ["credit_card", "debit_card", "upi", "net_banking", "wallet"], 
     default: "upi" 
   },
+  phoneNumber: { type: String, default: null },
   transactionId: { type: String, default: null },
   refundStatus: { 
     type: String, 
